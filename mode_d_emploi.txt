@@ -1,0 +1,118 @@
+==============================================================================
+                    ASTRALIS — GUIDE D'UTILISATION & MODE D'EMPLOI
+==============================================================================
+
+Bienvenue dans Astralis, votre moteur de simulation orbitale 3D haute précision.
+Ce logiciel permet de modéliser la dynamique gravitationnelle de systèmes 
+N-corps complexes en intégrant des effets physiques avancés (relativité, marées, 
+aplatissement des corps, perte de masse).
+
+Voici comment prendre en main l'application et exploiter toutes ses fonctionnalités.
+
+------------------------------------------------------------------------------
+ 1. ⚠️ ÉTAPE CRUCIALE : LANCER VOTRE PREMIÈRE SIMULATION
+------------------------------------------------------------------------------
+
+Pour faire tourner le moteur de calcul, le panneau de contrôle a besoin de savoir
+où se trouve le "cerveau" physique (le fichier moteur_astralis.py). 
+
+Voici la marche à suivre pour votre premier lancement :
+
+  1. Ouvrez l'application Astralis (via le raccourci sur votre Bureau).
+  2. Allez sur l'onglet "Simulation" (le tout dernier onglet à droite).
+  3. Tout en haut, localisez le champ "Script :".
+  4. Cliquez sur le bouton "Parcourir..." à droite de ce champ.
+  5. Naviguez jusqu'au dossier d'installation du logiciel. 
+     Par défaut, il se trouve ici :
+     👉 C:\Program Files\Astralis\
+  6. Sélectionnez le fichier "moteur_astralis.py" et validez.
+  7. Choisissez un "Scénario rapide" dans le menu déroulant (ex : Soleil-Terre-Lune).
+  8. Cliquez sur le gros bouton bleu "▶ Lancer la simulation" en bas.
+
+La barre de progression va s'activer. Une fois le calcul terminé, le tableau
+de bord va automatiquement charger les résultats pour vous les afficher !
+
+------------------------------------------------------------------------------
+ 2. EXPLICATION DES ONGLETS D'ANALYSE
+------------------------------------------------------------------------------
+
+Une fois la simulation chargée, utilisez les onglets pour analyser le système :
+
+• ORBITES :
+  Affiche les trajectoires en 2D et 3D. Vous pouvez filtrer les corps à afficher, 
+  zoomer, et changer de repère (absolu ou zoomer sur l'orbite d'un satellite).
+  *Astuce :* Si la simulation est très longue, utilisez le mode "Fenêtre glissante"
+  pour ne pas surcharger le dessin.
+
+• DISTANCES :
+  Permet de suivre la distance entre chaque paire de corps au cours du temps.
+  L'onglet "Histogramme" montre la répartition statistique de ces distances 
+  (très utile pour repérer des orbites stables ou des zones de résonance).
+
+• ENERGIE :
+  Mesure la précision de la simulation. Grâce à l'intégrateur symplectique de 
+  Yoshida, la dérive d'énergie totale (ΔE/E₀) doit rester extrêmement proche de 0 
+  (généralement inférieure à 0.01%), garantissant la fiabilité physique du calcul.
+
+• VITESSES & STABILITÉ :
+  Affiche l'évolution des vitesses et calcule les éléments orbitaux de Kepler 
+  instantanés (excentricité "e", demi-grand axe "a", inclinaison "i", etc.) par 
+  rapport au corps central de votre choix. 
+  Si ces valeurs sont stables (lignes plates) = le système est pérenne.
+
+• PHASE & DENSITÉ :
+  - Le diagramme de Phase (vitesse vs distance) dessine des boucles fermées 
+    si les orbites sont stables.
+  - La Densité Spatiale dessine une carte de chaleur des zones de l'espace 
+    les plus fréquentées par les planètes (idéal pour voir les anneaux ou orbites).
+
+• RESUMÉ :
+  Donne une fiche d'identité complète pour chaque corps (période orbitale mesurée, 
+  excentricité moyenne, période de rotation propre).
+
+------------------------------------------------------------------------------
+ 3. CRÉER ET CONFIGURER VOS PROPRES SYSTÈMES
+------------------------------------------------------------------------------
+
+Dans l'onglet "Simulation", sous-onglet "Corps", vous pouvez concevoir votre 
+propre système solaire de A à Z :
+
+• Ajouter/Supprimer des corps :
+  Utilisez le bouton "+ Ajouter un corps" pour créer une nouvelle planète.
+
+• Ajouter des satellites :
+  Sur le panneau d'un corps, cliquez sur "+ Ajouter un satellite". Il sera 
+  automatiquement configuré en orbite relative autour de sa planète parente.
+
+• Vitesse automatique :
+  Laissez la case "Vitesse circulaire automatique" cochée pour que le logiciel 
+  calcule de lui-même la vitesse parfaite pour maintenir le corps en orbite stable.
+
+• Paramètres physiques avancés (par corps) :
+  - J2R² : Simule l'aplatissement équatorial (ex: déformation de Jupiter).
+  - |ṁ| (kg/s) : Permet de faire perdre ou gagner de la masse à une étoile.
+  - Vitesse spin & k₂ : Simule le couplage marée-rotation (le spin de la planète
+    va précesser sous l'influence des autres corps).
+
+------------------------------------------------------------------------------
+ 4. SAUVEGARDE ET REPRISE
+------------------------------------------------------------------------------
+
+• Sauvegarder vos configurations :
+  Dans l'onglet "Simulation", vous pouvez cliquer sur "Sauvegarder config..." 
+  pour enregistrer votre système personnalisé dans un fichier `.json`. Vous 
+  pourrez le recharger plus tard via "Charger une config...".
+
+• Checkpoints (Reprise après crash) :
+  Pour les très longues simulations, Astralis sauvegarde régulièrement des 
+  "Checkpoints". Si votre PC s'éteint ou si la simulation est interrompue, 
+  cochez la case "Reprendre depuis checkpoint (--resume)" pour repartir de là 
+  où vous vous étiez arrêté.
+
+• Ouvrir une ancienne simulation :
+  Vous pouvez à tout moment cliquer sur le gros bouton "📂 Ouvrir un fichier..."
+  tout en haut du logiciel pour charger et analyser un fichier de données 
+  `.parquet` d'une ancienne simulation.
+
+==============================================================================
+                           Astralis - Par et pour les passionnés d'espace.

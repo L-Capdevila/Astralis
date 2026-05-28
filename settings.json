@@ -1,0 +1,86 @@
+{
+  "physics": {
+    "G": 6.674e-11,
+    "UA": 149600000000.0
+  },
+  "simulation": {
+    "duree_ans": 50.0,
+    "save_every": 10,
+    "monitor_every": 10,
+    "realtime_every": 25,
+    "flush_every": 50000,
+    "web_port": 5050,
+    "output_dir": "outputs",
+    "output_name": "Etoile Binaire",
+    "checkpoint_dir": "checkpoints",
+    "dt_max": 3600.0,
+    "dt_min": 1.0,
+    "softening": 1000000.0,
+    "dist_seuil_m": 50000000.0,
+    "alpha": 0.05,
+    "enable_pn1": false,
+    "c_light": 299792458.0,
+    "checkpoint_every_ans": 50.0,
+    "num_threads": 0
+  },
+  "bodies": [
+    {
+      "name": "Etoile A",
+      "mass": 1.989e+30,
+      "pos": [
+        74800000000.0,
+        0.0,
+        0.0
+      ],
+      "use_auto_vel": false,
+      "vel_manual": [
+        0.0,
+        15000.0,
+        0.0
+      ],
+      "incl_deg": 0.0,
+      "sens": 1,
+      "j2r2": 0.0,
+      "mdot": 0.0,
+      "mdot_loss": true,
+      "spin_rate": 0.0,
+      "spin_axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "k2": 0.0,
+      "inertia_factor": 0.4,
+      "rayon": 1000.0
+    },
+    {
+      "name": "Etoile B",
+      "mass": 1.5e+30,
+      "pos": [
+        -74800000000.0,
+        0.0,
+        0.0
+      ],
+      "use_auto_vel": false,
+      "vel_manual": [
+        0.0,
+        -20000.0,
+        0.0
+      ],
+      "incl_deg": 0.0,
+      "sens": 1,
+      "j2r2": 0.0,
+      "mdot": 0.0,
+      "mdot_loss": true,
+      "spin_rate": 0.0,
+      "spin_axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "k2": 0.0,
+      "inertia_factor": 0.4,
+      "rayon": 1000.0
+    }
+  ]
+}
