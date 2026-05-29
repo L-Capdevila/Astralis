@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Astralis — Simulateur gravitationnel N-corps 3D haute précision. Intégrateur Yoshida, PN1 optionnel, tableau de bord PyQt5, export Parquet. Gratuit pour Windows." />
+  <title>Astralis — Simulateur Gravitationnel 3D</title>
+  <link rel="icon" href="astralis_logo.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="astralis_logo.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Astralis — Simulateur Gravitationnel 3D" />
+  <meta property="og:description" content="Simulateur N-corps 3D avec intégrateur Yoshida, dashboard PyQt5 et export Parquet. Gratuit pour Windows." />
+  <meta property="og:image" content="https://l-capdevila.github.io/Astralis/astralis_logo.png" />
+  <meta property="og:url" content="https://l-capdevila.github.io/Astralis/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Astralis — Simulateur Gravitationnel 3D" />
+  <meta name="twitter:description" content="Simulateur N-corps 3D haute précision — gratuit pour Windows." />
+  <meta name="twitter:image" content="https://l-capdevila.github.io/Astralis/astralis_logo.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-body: #0B0F19; --bg-panel: #111827; --bg-card: #1A233A;
+      --accent: #00E5FF; --accent-hover: #38BDF8; --border: #2A3B5C;
+      --text: #F8FAFC; --muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg-body); color: var(--text); font-family: 'Exo 2', sans-serif; overflow-x: hidden; }
+
+    #starfield { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .star { position: absolute; border-radius: 50%; background: #fff; opacity: 0; animation: twinkle var(--d,4s) ease-in-out infinite var(--delay,0s); }
+    @keyframes twinkle { 0%,100%{opacity:0} 50%{opacity:var(--op,.7)} }
+    .nebula { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; opacity: .18; }
+    .nebula-1 { width:700px;height:700px;background:radial-gradient(circle,#00E5FF 0%,transparent 70%);top:-200px;right:-200px; }
+    .nebula-2 { width:500px;height:500px;background:radial-gradient(circle,#38BDF8 0%,transparent 70%);bottom:5%;left:-150px; }
+    .nebula-3 { width:400px;height:400px;background:radial-gradient(circle,#1e3a8a 0%,transparent 70%);top:40%;left:30%; }
+
+    section { position: relative; z-index: 1; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+    .section-label { font-family:'Space Mono',monospace;font-size:.72rem;color:var(--accent);letter-spacing:.18em;text-transform:uppercase;margin-bottom:.75rem; }
+    h2.section-title { font-family:'Orbitron',sans-serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;letter-spacing:.05em;margin-bottom:1rem; }
+    .section-desc { color:var(--muted);font-size:1.05rem;line-height:1.75;max-width:680px; }
+    .divider { width:60px;height:3px;background:linear-gradient(90deg,var(--accent),transparent);margin-bottom:3rem;border-radius:2px; }
+
+    nav { position:fixed;top:0;width:100%;z-index:100;background:rgba(11,15,25,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border); }
+    .nav-inner { max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.5rem; }
+    .logo { display:flex;align-items:center;gap:.65rem;font-family:'Orbitron',sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:.18em;color:var(--text);text-decoration:none; }
+    .logo-icon { width:34px;height:34px;border:2px solid var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(0,229,255,.45);overflow:hidden; }
+    .logo-icon img.logo-img { width:100%;height:100%;object-fit:cover;border-radius:6px;display:block; }
+    .logo-icon svg { width:20px;height:20px; }
+    .logo-icon svg.logo-fallback { display:none; }
+    .logo-icon.is-fallback svg.logo-fallback { display:block; }
+    .logo-icon.is-fallback img { display:none !important; }
+    .nav-links { display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap; }
+    .nav-links a { color:var(--muted);text-decoration:none;font-size:.85rem;font-weight:500;transition:color .2s; }
+    .nav-links a:hover { color:var(--accent); }
+    .btn-lang { background:transparent;border:1px solid var(--border);color:var(--muted);padding:.3rem .75rem;border-radius:6px;font-size:.78rem;cursor:pointer;font-family:'Space Mono',monospace; }
+    .btn-lang:hover { border-color:var(--accent);color:var(--accent); }
+
+    #hero { min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:7rem 1.5rem 4rem; }
+    .hero-badge { display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--border);border-radius:999px;padding:.35rem 1rem;font-size:.78rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:2rem;background:rgba(26,35,58,.5); }
+    .hero-badge .dot { width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse-dot 2s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.3} }
+    h1.title { font-family:'Orbitron',sans-serif;font-size:clamp(3rem,10vw,7rem);font-weight:900;letter-spacing:.25em;padding-left:.25em;text-align:center;width:100%;line-height:1;color:var(--text);text-shadow:0 0 40px rgba(0,229,255,.45);margin:0 auto 1.5rem; }
+    h1.title span { color:var(--accent); }
+    .hero-slogan { font-size:clamp(1rem,2.5vw,1.2rem);color:var(--muted);line-height:1.7;max-width:620px;margin:0 auto 2rem;font-weight:300; }
+    .hero-slogan em { color:var(--accent-hover);font-style:normal;font-weight:500; }
+    .hero-actions { display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;align-items:center; }
+    .btn-download { display:inline-flex;align-items:center;gap:.75rem;background:var(--accent);color:#000;font-family:'Orbitron',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.08em;padding:.95rem 2.2rem;border-radius:10px;text-decoration:none;box-shadow:0 0 24px rgba(0,229,255,.45);transition:all .3s; }
+    .btn-download:hover { background:var(--accent-hover);transform:translateY(-2px);box-shadow:0 0 36px rgba(0,229,255,.65); }
+    .btn-secondary { display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--border);color:var(--text);padding:.95rem 1.8rem;border-radius:10px;text-decoration:none;font-size:.9rem;transition:all .25s; }
+    .btn-secondary:hover { border-color:var(--accent);color:var(--accent); }
+    .hero-meta { margin-top:1.25rem;font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.5rem 1rem; }
+    .hero-meta i { color:var(--accent); }
+
+    .stats-row { display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:3rem; }
+    .stat-card { background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center; }
+    .stat-card strong { display:block;font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--accent);margin-bottom:.25rem; }
+    .stat-card span { font-size:.8rem;color:var(--muted); }
+
+    #about { padding:5rem 0; }
+    .about-grid { display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;margin-top:2.5rem;align-items:start; }
+    .about-card { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.75rem; }
+    .about-card h3 { font-family:'Orbitron',sans-serif;font-size:.95rem;margin-bottom:.75rem;color:var(--accent); }
+    .about-card p, .about-card li { color:var(--muted);font-size:.92rem;line-height:1.7; }
+    .about-card ul { padding-left:1.2rem; }
+
+    #gallery { padding:5rem 0; background:linear-gradient(180deg,transparent,rgba(17,24,39,.35),transparent); }
+    .gallery-filters { display:flex;flex-wrap:wrap;gap:.5rem;margin:2rem 0 1.5rem; }
+    .gallery-filter { background:var(--bg-card);border:1px solid var(--border);color:var(--muted);padding:.45rem 1rem;border-radius:999px;font-size:.78rem;cursor:pointer;font-family:'Space Mono',monospace;transition:all .2s; }
+    .gallery-filter.active, .gallery-filter:hover { border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.08); }
+    .gallery-featured { margin-bottom:2rem;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--bg-card);cursor:pointer;transition:box-shadow .3s; }
+    .gallery-featured:hover { box-shadow:0 0 32px rgba(0,229,255,.15); }
+    .gallery-featured img { width:100%;max-height:480px;object-fit:cover;display:block; }
+    .gallery-featured-info { padding:1.25rem 1.5rem; }
+    .gallery-featured-info h3 { font-size:1.1rem;margin-bottom:.35rem; }
+    .gallery-featured-info p { color:var(--muted);font-size:.88rem; }
+    .gallery-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem; }
+    .gallery-card { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .3s;cursor:pointer; }
+    .gallery-card:hover { border-color:var(--accent);transform:translateY(-4px);box-shadow:0 0 24px rgba(0,229,255,.12); }
+    .gallery-img-container { width:100%;aspect-ratio:16/9;background:var(--bg-panel);position:relative;overflow:hidden; }
+    .gallery-img-container img { width:100%;height:100%;object-fit:cover;transition:transform .4s; }
+    .gallery-card:hover .gallery-img-container img { transform:scale(1.03); }
+    .gallery-fallback { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;background:linear-gradient(135deg,#0d1b2e,#1A233A); }
+    .gallery-fallback i { font-size:2rem;color:var(--accent);opacity:.45; }
+    .gallery-fallback span { font-family:'Space Mono',monospace;font-size:.72rem;color:var(--muted);padding:0 1rem;text-align:center;word-break:break-all; }
+    .gallery-info { padding:1rem 1.15rem; }
+    .gallery-info h3 { font-size:.92rem;font-weight:600;margin-bottom:.25rem; }
+    .gallery-info p { font-size:.8rem;color:var(--muted);line-height:1.5; }
+    .gallery-tag { display:inline-block;margin-top:.5rem;font-size:.65rem;font-family:'Space Mono',monospace;color:var(--accent);background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);border-radius:4px;padding:.1rem .45rem; }
+    .gallery-notice { margin:1rem 0 1.5rem;padding:.85rem 1.1rem;border-radius:10px;border:1px dashed rgba(0,229,255,.35);background:rgba(0,229,255,.06);color:var(--muted);font-size:.85rem;line-height:1.6; }
+    .gallery-notice code { font-family:'Space Mono',monospace;color:var(--accent);font-size:.78rem; }
+
+    #lightbox { display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.92);align-items:center;justify-content:center;padding:1.5rem; }
+    #lightbox.open { display:flex; }
+    #lightbox img { max-width:95vw;max-height:85vh;border-radius:8px;border:1px solid var(--border); }
+    #lightbox .lb-close { position:absolute;top:1.25rem;right:1.5rem;background:none;border:none;color:var(--text);font-size:2rem;cursor:pointer; }
+    #lightbox .lb-caption { position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);text-align:center;color:var(--muted);font-size:.9rem;max-width:90vw; }
+
+    #tabs-section { padding:5rem 0; }
+    .tabs-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem; }
+    .tab-card { background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:1.25rem;transition:border-color .25s; }
+    .tab-card:hover { border-color:rgba(0,229,255,.4); }
+    .tab-card i { color:var(--accent);font-size:1.2rem;margin-bottom:.65rem; }
+    .tab-card h3 { font-size:.88rem;font-weight:600;margin-bottom:.35rem; }
+    .tab-card p { font-size:.8rem;color:var(--muted);line-height:1.55; }
+
+    #features { padding:5rem 0; }
+    .features-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem;margin-top:2.5rem; }
+    .feature-card { background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;transition:all .3s; }
+    .feature-card:hover { border-color:rgba(0,229,255,.4);transform:translateY(-3px); }
+    .feat-icon { width:44px;height:44px;border-radius:10px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;margin-bottom:1rem; }
+    .feat-icon i { color:var(--accent); }
+    .feature-card h3 { font-family:'Orbitron',sans-serif;font-size:.82rem;letter-spacing:.05em;margin-bottom:.5rem; }
+    .feature-card p { font-size:.85rem;color:var(--muted);line-height:1.65; }
+    .feature-tag { display:inline-block;margin-top:.75rem;font-size:.68rem;font-family:'Space Mono',monospace;color:var(--accent);background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);border-radius:4px;padding:.12rem .45rem; }
+
+    #usage { padding:5rem 0;background:linear-gradient(180deg,transparent,rgba(17,24,39,.3),transparent); }
+    .workflow { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;margin-top:2.5rem; }
+    .workflow-step { text-align:center;padding:1.5rem; }
+    .workflow-num { width:48px;height:48px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-family:'Orbitron',sans-serif;color:var(--accent);font-weight:700; }
+    .workflow-step h3 { font-size:.95rem;margin-bottom:.4rem; }
+    .workflow-step p { font-size:.85rem;color:var(--muted);line-height:1.6; }
+
+    #install { padding:5rem 0; }
+    .steps-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-top:2.5rem; }
+    .step-card { background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;padding:1.75rem;text-align:center; }
+    .step-card:hover { border-color:var(--accent); }
+    .step-number { font-family:'Orbitron',sans-serif;font-size:.68rem;color:var(--accent);letter-spacing:.1em;margin-bottom:.75rem; }
+    .step-icon-wrap { width:64px;height:64px;border-radius:50%;background:rgba(0,229,255,.06);border:2px solid rgba(0,229,255,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem; }
+    .step-icon-wrap i { font-size:1.5rem;color:var(--accent); }
+    .step-card h3 { font-size:1rem;margin-bottom:.4rem; }
+    .step-card p { font-size:.85rem;color:var(--muted);line-height:1.6; }
+
+    #requirements { padding:4rem 0 5rem; }
+    .req-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:1.5rem; }
+    .req-item { display:flex;align-items:center;gap:.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1rem;font-size:.88rem;color:var(--muted); }
+    .req-item i { color:var(--accent);width:20px;text-align:center; }
+
+    footer { background:var(--bg-panel);border-top:1px solid var(--border);padding:3rem 1.5rem;text-align:center;position:relative;z-index:1; }
+    .footer-logo { font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:.18em;margin-bottom:1rem; }
+    footer p { color:var(--muted);font-size:.85rem;line-height:1.8;max-width:680px;margin:0 auto 1rem; }
+    footer a { color:var(--accent);text-decoration:none; }
+    footer a:hover { text-decoration:underline; }
+    .footer-copy { font-size:.75rem;color:#4B5563;font-family:'Space Mono',monospace; }
+
+    @media (max-width:768px) {
+      .nav-links .hide-mobile { display:none; }
+      .about-grid { grid-template-columns:1fr; }
+      h1.title { letter-spacing:.12em; padding-left:.12em; }
+      .tabs-grid { grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width:480px) {
+      .tabs-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="starfield"></div>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#hero" class="logo">
+      <div class="logo-icon" id="navLogoIcon">
+        <img class="logo-img" src="astralis_logo.png" alt="Astralis" onerror="document.getElementById('navLogoIcon').classList.add('is-fallback')" />
+        <svg class="logo-fallback" viewBox="0 0 24 24" fill="none"><polygon points="12,2 22,20 2,20" fill="none" stroke="#00E5FF" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="#00E5FF" opacity=".8"/></svg>
+      </div>
+      ASTRALIS
+    </a>
+    <div class="nav-links">
+      <a href="#about" class="hide-mobile" data-i18n="nav.about">À propos</a>
+      <a href="#gallery" class="hide-mobile" data-i18n="nav.gallery">Galerie</a>
+      <a href="#features" class="hide-mobile" data-i18n="nav.features">Fonctionnalités</a>
+      <a href="#install" class="hide-mobile" data-i18n="nav.install">Installation</a>
+      <a href="https://github.com/L-Capdevila/Astralis" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>
+      <button class="btn-lang" id="langToggle" onclick="toggleLang()">EN</button>
+    </div>
+  </div>
+</nav>
+
+<section id="hero">
+  <div class="container hero-content" style="text-align:center;">
+    <div class="hero-badge"><span class="dot"></span><span data-i18n="hero.badge">1.0.3 — Disponible pour Windows</span></div>
+    <h1 class="title">ASTR<span>A</span>LIS</h1>
+    <p class="hero-slogan" data-i18n="hero.slogan">Simulez la gravité à l'échelle céleste. Moteur <em>N-corps 3D</em> Yoshida, neuf onglets d'analyse scientifique, interface complète sous Windows.</p>
+    <div class="hero-actions">
+      <a href="https://github.com/L-Capdevila/Astralis/releases/latest/download/Setup_Astralis.exe" class="btn-download" download="Setup_Astralis.exe" rel="noopener">
+        <i class="fab fa-windows"></i><span data-i18n="hero.download">Télécharger pour Windows</span>
+      </a>
+      <a href="#gallery" class="btn-secondary"><i class="fas fa-images"></i> <span data-i18n="hero.gallery">Voir la galerie</span></a>
+    </div>
+    <div class="hero-meta">
+      <span><i class="fas fa-shield-alt"></i> <span data-i18n="hero.meta">Gratuit · Open Source · Windows 10/11</span></span>
+      <span><i class="fas fa-database"></i> <span data-i18n="hero.meta2">Export Parquet · CSV (Distances, Stabilité)</span></span>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><strong>9</strong><span data-i18n="stat.tabs">Onglets d'analyse</span></div>
+      <div class="stat-card"><strong>Y4</strong><span data-i18n="stat.yoshida">Intégrateur Yoshida</span></div>
+      <div class="stat-card"><strong>PN1</strong><span data-i18n="stat.pn1">PN1 (option)</span></div>
+      <div class="stat-card"><strong>N</strong><span data-i18n="stat.nbodies">Corps multiples</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="container">
+    <p class="section-label" data-i18n="about.label">// Le projet</p>
+    <h2 class="section-title" data-i18n="about.title">Astralis, qu'est-ce que c'est ?</h2>
+    <p class="section-desc" data-i18n="about.desc">Astralis est un simulateur gravitationnel N-corps 3D capable de reproduire la dynamique de systèmes célestes complexes sur de longues durées. Conçu pour la précision numérique, il embarque un tableau de bord d'analyse complet directement intégré à l'interface.</p>
+    <div class="divider"></div>
+    <div class="about-grid">
+      <div class="about-card">
+        <h3 data-i18n="about.card1.title">Moteur de simulation</h3>
+        <p data-i18n="about.card1.desc">Calcul N-corps 3D vectorisé avec Numba, intégrateur symplectique Yoshida 4, pas adaptatif Sundman, checkpoints périodiques et reprise sur checkpoint. Les données sont exportées en Parquet.</p>
+      </div>
+      <div class="about-card">
+        <h3 data-i18n="about.card2.title">Tableau de bord PyQt5</h3>
+        <p data-i18n="about.card2.desc">Configurez vos corps, lancez le moteur : à la fin de la simulation, le dashboard recharge automatiquement le Parquet. Analysez ensuite orbites 2D/3D, énergie, stabilité képlérienne, diagrammes de phase et cartes de densité.</p>
+      </div>
+      <div class="about-card">
+        <h3 data-i18n="about.card3.title">Public visé</h3>
+        <ul>
+          <li data-i18n="about.list1">Étudiants et passionnés d'astronomie</li>
+          <li data-i18n="about.list2">Projets de mécanique céleste et de recherche</li>
+          <li data-i18n="about.list3">Validation et exploration de stabilité orbitale</li>
+        </ul>
+      </div>
+      <div class="about-card">
+        <h3 data-i18n="about.card4.title">Crédits</h3>
+        <p data-i18n="about.card4.desc">Conception et direction : L. Capdevila. Développement : collaboration IA (Claude & Gemini). Projet open source indépendant.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="gallery">
+  <div class="container">
+    <p class="section-label" data-i18n="gallery.label">// Captures d'écran</p>
+    <h2 class="section-title" data-i18n="gallery.title">Galerie</h2>
+    <p class="section-desc" data-i18n="gallery.desc">Explorez visuellement Astralis — onglets d'analyse interactifs et panneau de simulation.</p>
+    <div class="divider"></div>
+    <p class="gallery-notice" id="galleryNotice" data-i18n="gallery.notice">
+      Astuce : déposez vos captures PNG dans le dossier <code>gallery/</code> (ex. <code>02-orbites.png</code>) — elles remplaceront automatiquement les aperçus.
+    </p>
+    <div class="gallery-filters" id="galleryFilters"></div>
+    <div id="galleryFeatured" class="gallery-featured" style="display:none;"></div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</section>
+
+<section id="tabs-section">
+  <div class="container">
+    <p class="section-label" data-i18n="tabs.label">// Interface</p>
+    <h2 class="section-title" data-i18n="tabs.title">Les 9 onglets du dashboard</h2>
+    <p class="section-desc" data-i18n="tabs.desc">Chaque onglet offre une vue dédiée — analyse scientifique ou contrôle du moteur de simulation.</p>
+    <div class="tabs-grid" id="tabsGrid"></div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <p class="section-label" data-i18n="features.label">// Moteur physique</p>
+    <h2 class="section-title" data-i18n="features.title">Fonctionnalités techniques</h2>
+    <div class="divider"></div>
+    <div class="features-grid" id="featuresGrid"></div>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="container" style="text-align:center;">
+    <p class="section-label" data-i18n="usage.label">// Workflow</p>
+    <h2 class="section-title" data-i18n="usage.title">Comment ça marche ?</h2>
+    <p class="section-desc" style="margin:0 auto;" data-i18n="usage.desc">De la configuration à l'analyse des résultats en quatre étapes.</p>
+    <div class="workflow" id="workflowGrid"></div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="container" style="text-align:center;">
+    <p class="section-label" data-i18n="install.label">// Installation</p>
+    <h2 class="section-title" data-i18n="install.title">Télécharger & installer</h2>
+    <div class="divider" style="margin:1.5rem auto 0;"></div>
+    <div class="steps-grid" id="installSteps"></div>
+    <div style="margin-top:2rem;">
+      <a href="https://github.com/L-Capdevila/Astralis/releases/latest/download/Setup_Astralis.exe" class="btn-download" download rel="noopener">
+        <i class="fab fa-windows"></i> <span data-i18n="hero.download">Télécharger pour Windows</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="requirements">
+  <div class="container">
+    <p class="section-label" data-i18n="req.label">// Configuration</p>
+    <h2 class="section-title" data-i18n="req.title">Prérequis système</h2>
+    <div class="req-grid" id="reqGrid"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">ASTRALIS</div>
+  <p data-i18n="footer.desc">Projet scientifique conçu par L. Capdevila — simulateur gravitationnel open source.</p>
+  <p><a href="https://github.com/L-Capdevila/Astralis" target="_blank" rel="noopener"><i class="fab fa-github"></i> github.com/L-Capdevila/Astralis</a></p>
+  <div class="footer-line" style="width:40px;height:2px;background:var(--accent);margin:1.5rem auto;opacity:.5;"></div>
+  <p class="footer-copy" data-i18n="footer.copy">© L. Capdevila — Open Source</p>
+</footer>
+
+<div id="lightbox" onclick="closeLightbox(event)">
+  <button class="lb-close" onclick="closeLightbox(event)" aria-label="Fermer">&times;</button>
+  <img id="lightboxImg" src="" alt="" />
+  <p class="lb-caption" id="lightboxCaption"></p>
+</div>
+
+<script>
+/* ── STARFIELD ── */
+(function(){const sf=document.getElementById('starfield');for(let i=0;i<180;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2.5+.5;s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*5+2).toFixed(1)}s;--delay:-${(Math.random()*6).toFixed(1)}s;--op:${(Math.random()*.6+.2).toFixed(2)}`;sf.appendChild(s);}})();
+
+/* ── GALERIE : nommez vos fichiers dans gallery/ (voir gallery/README.txt) ── */
+function gallerySources(item) {
+  const stem = item.file.replace(/\.(png|jpe?g|webp)$/i, '');
+  return [item.file, stem + '.svg', ...(item.fallback || [])];
+}
+
+const GALLERY_ITEMS = [
+  { id:'02', file:'gallery/02-orbites.png',    fallback:['orbital-view-3d.png'], cat:'analysis', fr:{title:'Onglet Orbites',desc:'Trajectoires 2D et 3D, filtres de corps et repères.'}, en:{title:'Orbits tab',desc:'2D and 3D trajectories with body filters and frames.'} },
+  { id:'03', file:'gallery/03-energie.png',    fallback:['energy-plot.png'], cat:'analysis', fr:{title:'Onglet Énergie',desc:'Dérive d\'énergie totale et moment cinétique — indicateur de précision.'}, en:{title:'Energy tab',desc:'Total energy drift and angular momentum — precision indicator.'} },
+  { id:'04', file:'gallery/04-distances.png',  fallback:[], cat:'analysis', fr:{title:'Onglet Distances',desc:'Distances inter-corps et histogrammes statistiques.'}, en:{title:'Distances tab',desc:'Inter-body distances and statistical histograms.'} },
+  { id:'05', file:'gallery/05-stabilite.png',  fallback:[], cat:'analysis', fr:{title:'Onglet Stabilité',desc:'Éléments orbitaux de Kepler (e, a, i, ω, Ω) dans le temps.'}, en:{title:'Stability tab',desc:'Kepler orbital elements (e, a, i, ω, Ω) over time.'} },
+  { id:'06', file:'gallery/06-phase.png',      fallback:[], cat:'analysis', fr:{title:'Diagramme de phase',desc:'Vitesse vs distance — boucles fermées si orbite stable.'}, en:{title:'Phase diagram',desc:'Velocity vs distance — closed loops indicate stable orbits.'} },
+  { id:'07', file:'gallery/07-densite.png',    fallback:[], cat:'analysis', fr:{title:'Densité spatiale',desc:'Carte de chaleur des zones les plus fréquentées.'}, en:{title:'Spatial density',desc:'Heat map of most frequented spatial zones.'} },
+  { id:'08', file:'gallery/08-simulation.png', fallback:['parameters-panel.png'], cat:'simulation', fr:{title:'Onglet Simulation',desc:'Presets, paramètres physiques et lancement du moteur.'}, en:{title:'Simulation tab',desc:'Presets, physics settings and engine launch.'} },
+  { id:'09', file:'gallery/09-resume.png',     fallback:[], cat:'analysis', fr:{title:'Onglet Résumé',desc:'Fiche d\'identité de chaque corps (période, excentricité…).'}, en:{title:'Summary tab',desc:'Per-body report card (period, eccentricity…).'} },
+  { id:'10', file:'gallery/10-vitesses.png',   fallback:[], cat:'analysis', fr:{title:'Onglet Vitesses',desc:'Évolution des vitesses de chaque corps.'}, en:{title:'Velocities tab',desc:'Velocity evolution for each body.'} },
+];
+
+const FEATURES = [
+  { icon:'fa-infinity', tag:'symplectic · Y4', fr:{t:'Intégrateur Yoshida 4',d:'Schéma symplectique d\'ordre 4 — conservation hamiltonienne sur de longues durées simulées (selon votre configuration).'}, en:{t:'Yoshida 4 integrator',d:'4th-order symplectic scheme — Hamiltonian conservation over extended simulated timescales (depending on your settings).'} },
+  { icon:'fa-tachometer-alt', tag:'adaptive', fr:{t:'Pas adaptatif Sundman',d:'Pas de temps réduit automatiquement lors des rapprochements — meilleure précision dans les zones critiques.'}, en:{t:'Sundman adaptive step',d:'Timestep automatically reduced during close encounters — higher accuracy in critical zones.'} },
+  { icon:'fa-atom', tag:'PN1 · option', fr:{t:'Relativité post-newtonienne',d:'Approximation PN1 (1er ordre) activable dans l\'onglet Simulation — précession des périhélies, sans ondes gravitationnelles.'}, en:{t:'Post-Newtonian relativity',d:'Optional PN1 (1st-order) approximation in the Simulation tab — perihelion precession, without gravitational waves.'} },
+  { icon:'fa-compress-alt', tag:'J2 · option', fr:{t:'Aplatissement J2',d:'Coefficient J2·R² configurable par corps — oblativité pour les orbites basses et les satellites.'}, en:{t:'J2 flattening',d:'Per-body J2·R² coefficient — oblateness for low orbits and satellite dynamics.'} },
+  { icon:'fa-water', tag:'k2 · option', fr:{t:'Marées gravitationnelles k2',d:'Coefficient de Love k₂ par corps — couples de marée et transfert de moment angulaire entre corps proches.'}, en:{t:'Tidal k2 forces',d:'Per-body Love number k₂ — tidal torques and angular momentum transfer between close bodies.'} },
+  { icon:'fa-save', tag:'checkpoint', fr:{t:'Checkpoints & reprise',d:'Sauvegardes périodiques automatiques pendant la simulation — reprenez avec --resume sans tout recalculer.'}, en:{t:'Checkpoints & resume',d:'Automatic periodic saves during simulation — resume with --resume without recomputing from scratch.'} },
+  { icon:'fa-file-export', tag:'parquet', fr:{t:'Export Parquet / CSV',d:'Sortie principale en Parquet (Pandas, outils scientifiques). Export CSV depuis les onglets Distances et Stabilité.'}, en:{t:'Parquet / CSV export',d:'Primary Parquet output (Pandas, scientific tools). CSV export from Distances and Stability tabs.'} },
+  { icon:'fa-chart-bar', tag:'dashboard', fr:{t:'9 onglets d\'analyse',d:'Orbites, énergie, distances, vitesses, stabilité képlérienne, phase, densité spatiale, résumé et simulation.'}, en:{t:'9 analysis tabs',d:'Orbits, energy, distances, velocities, Keplerian stability, phase, spatial density, summary and simulation.'} },
+];
+
+const DASHBOARD_TABS = [
+  { icon:'fa-globe', fr:{t:'Orbites',d:'Trajectoires 2D et 3D, zoom interactif, filtres de corps et repères de référence.'}, en:{t:'Orbits',d:'2D and 3D trajectories, interactive zoom, body filters and reference frames.'} },
+  { icon:'fa-ruler-horizontal', fr:{t:'Distances',d:'Courbes temporelles et histogrammes statistiques des distances inter-corps.'}, en:{t:'Distances',d:'Time curves and statistical histograms of inter-body distances.'} },
+  { icon:'fa-bolt', fr:{t:'Énergie',d:'Dérive relative ΔE/E₀ et conservation du moment cinétique — indicateur de précision numérique.'}, en:{t:'Energy',d:'Relative drift ΔE/E₀ and angular momentum conservation — numerical accuracy indicator.'} },
+  { icon:'fa-running', fr:{t:'Vitesses',d:'Évolution temporelle des normes et composantes de vitesse pour chaque corps.'}, en:{t:'Velocities',d:'Time evolution of velocity norms and components for each body.'} },
+  { icon:'fa-anchor', fr:{t:'Stabilité',d:'Éléments orbitaux de Kepler (e, a, i, ω, Ω) en fonction du temps simulé.'}, en:{t:'Stability',d:'Keplerian orbital elements (e, a, i, ω, Ω) as a function of simulated time.'} },
+  { icon:'fa-project-diagram', fr:{t:'Phase',d:'Espace des phases vitesse vs distance — les boucles fermées signalent une orbite stable.'}, en:{t:'Phase',d:'Phase space velocity vs distance — closed loops indicate stable orbits.'} },
+  { icon:'fa-th', fr:{t:'Densité spatiale',d:'Carte de chaleur des zones les plus fréquentées par les corps au cours de la simulation.'}, en:{t:'Spatial density',d:'Heat map of the most frequently visited spatial zones throughout the simulation.'} },
+  { icon:'fa-list-alt', fr:{t:'Résumé',d:'Fiche d\'identité complète de chaque corps : période, excentricité, demi-grand axe…'}, en:{t:'Summary',d:'Complete report card for each body: period, eccentricity, semi-major axis…'} },
+  { icon:'fa-play-circle', fr:{t:'Simulation',d:'Choix du preset, configuration des paramètres physiques et lancement du moteur.'}, en:{t:'Simulation',d:'Preset selection, physics parameter configuration and engine launch.'} },
+];
+
+let currentLang = 'fr';
+let appVersion = '1.0.3';
+let galleryFilter = 'all';
+let loadedRealGalleryCount = 0;
+
+const HTML_I18N_KEYS = new Set(['hero.slogan', 'gallery.notice']);
+
+const i18n = {
+  fr: {
+    'nav.about':'À propos','nav.gallery':'Galerie','nav.features':'Fonctionnalités','nav.install':'Installation',
+    'hero.badge':'1.0.3 — Disponible pour Windows',
+    'hero.slogan':'Simulez la gravité à l\'échelle céleste. Moteur <em>N-corps 3D</em> Yoshida, neuf onglets d\'analyse scientifique, interface complète sous Windows.',
+    'hero.download':'Télécharger pour Windows','hero.gallery':'Voir la galerie',
+    'hero.meta':'Gratuit · Open Source · Windows 10/11','hero.meta2':'Export Parquet · CSV (Distances, Stabilité)',
+    'stat.tabs':"Onglets d'analyse",'stat.yoshida':'Intégrateur Yoshida','stat.pn1':'PN1 (option)','stat.nbodies':'Corps multiples',
+    'about.label':'// Le projet','about.title':"Astralis, qu'est-ce que c'est ?",'about.desc':'Astralis est un simulateur gravitationnel N-corps 3D capable de reproduire la dynamique de systèmes célestes complexes sur de longues durées. Conçu pour la précision numérique, il embarque un tableau de bord d\'analyse complet directement intégré à l\'interface.',
+    'about.card1.title':'Moteur de simulation','about.card1.desc':'Calcul N-corps 3D vectorisé avec Numba, intégrateur symplectique Yoshida 4, pas adaptatif Sundman, checkpoints périodiques et reprise sur checkpoint. Les données sont exportées en Parquet.',
+    'about.card2.title':'Tableau de bord PyQt5','about.card2.desc':'Configurez vos corps, lancez le moteur : à la fin de la simulation, le dashboard recharge automatiquement le Parquet. Analysez ensuite orbites 2D/3D, énergie, stabilité képlérienne, diagrammes de phase et cartes de densité.',
+    'about.card3.title':'Public visé','about.list1':"Étudiants et passionnés d'astronomie",'about.list2':'Projets de mécanique céleste et de recherche','about.list3':'Validation et exploration de stabilité orbitale',
+    'about.card4.title':'Crédits','about.card4.desc':'Conception et direction : L. Capdevila. Développement : collaboration IA (Claude & Gemini). Projet open source et indépendant.',
+    'gallery.label':"// Captures d'écran",'gallery.title':'Galerie','gallery.desc':"Explorez visuellement Astralis — onglets d'analyse interactifs et panneau de simulation.",
+    'gallery.filter.all':'Tous','gallery.filter.analysis':'Analyse','gallery.filter.simulation':'Simulation',
+    'gallery.notice':'Astuce : déposez vos captures PNG dans le dossier <code>gallery/</code> (ex. <code>02-orbites.png</code>) — elles remplaceront automatiquement les aperçus.',
+    'tabs.label':'// Interface','tabs.title':'Les 9 onglets du dashboard','tabs.desc':'Chaque onglet offre une vue dédiée — analyse scientifique ou contrôle du moteur de simulation.',
+    'features.label':'// Moteur physique','features.title':'Fonctionnalités techniques',
+    'usage.label':'// Workflow','usage.title':'Comment ça marche ?','usage.desc':'De la configuration initiale à l\'analyse des résultats — quatre étapes simples.',
+    'usage.s1.t':'Choisir un preset','usage.s1.d':'Système Soleil-Terre-Lune, binaire stellaire, ou configuration entièrement personnalisée.',
+    'usage.s2.t':'Lancer la simulation','usage.s2.d':'Le moteur calcule les trajectoires et exporte automatiquement les données en Parquet.',
+    'usage.s3.t':'Charger les résultats','usage.s3.d':'À la fin du calcul, le dashboard détecte et charge automatiquement le fichier Parquet de sortie.',
+    'usage.s4.t':'Analyser','usage.s4.d':'Explorez orbites, énergie et stabilité. Export CSV depuis Distances et Stabilité ; export PNG sur les graphiques.',
+    'install.label':'// Installation','install.title':'Télécharger & installer',
+    'install.s1.t':'Télécharger','install.s1.d':'Récupérez Setup_Astralis.exe directement depuis la page GitHub Releases.',
+    'install.s2.t':'Installer','install.s2.d':'Lancez l\'installateur. Si SmartScreen s\'affiche : Informations complémentaires → Exécuter quand même.',
+    'install.s3.t':'Lancer','install.s3.d':'Double-cliquez sur Astralis pour ouvrir le tableau de bord.',
+    'install.s4.t':'Simuler','install.s4.d':'Onglet Simulation → choisissez un preset → appuyez sur ▶ Lancer.',
+    'req.label':'// Configuration','req.title':'Prérequis système',
+    'req.r1':'Windows 10 ou 11 (64 bits)','req.r2':'~120 Mo d\'espace disque','req.r3':'4 Go RAM recommandés','req.r4':'Python non requis — tout inclus dans l\'installateur',
+    'footer.desc':'Projet scientifique conçu par L. Capdevila — simulateur gravitationnel N-corps open source.',
+    'footer.copy':`© ${new Date().getFullYear()} L. Capdevila — Open Source`,
+  },
+  en: {
+    'nav.about':'About','nav.gallery':'Gallery','nav.features':'Features','nav.install':'Install',
+    'hero.badge':'1.0.3 — Available for Windows',
+    'hero.slogan':'Simulate gravity at a celestial scale. <em>N-body 3D</em> Yoshida engine, nine scientific analysis tabs, full-featured Windows interface.',
+    'hero.download':'Download for Windows','hero.gallery':'View gallery',
+    'hero.meta':'Free · Open Source · Windows 10/11','hero.meta2':'Parquet export · CSV (Distances, Stability)',
+    'stat.tabs':'Analysis tabs','stat.yoshida':'Yoshida integrator','stat.pn1':'PN1 (optional)','stat.nbodies':'Multiple bodies',
+    'about.label':'// The project','about.title':'What is Astralis?','about.desc':'Astralis is a 3D N-body gravitational simulator capable of reproducing the dynamics of complex celestial systems over long timescales. Built for numerical accuracy, it includes a fully integrated scientific analysis dashboard.',
+    'about.card1.title':'Simulation engine','about.card1.desc':'Numba-accelerated 3D N-body computation, Yoshida 4 symplectic integrator, Sundman adaptive step, periodic checkpoints and resume. Data exported as Parquet.',
+    'about.card2.title':'PyQt5 dashboard','about.card2.desc':'Configure bodies and run the engine — when the run finishes, the dashboard automatically reloads the Parquet output. Then explore 2D/3D orbits, energy, Keplerian stability, phase diagrams and density maps.',
+    'about.card3.title':'Who is it for?','about.list1':'Students and astronomy enthusiasts','about.list2':'Celestial mechanics and research projects','about.list3':'Orbital stability exploration and validation',
+    'about.card4.title':'Credits','about.card4.desc':'Design & direction: L. Capdevila. Development: AI collaboration (Claude & Gemini). Independent open-source project.',
+    'gallery.label':'// Screenshots','gallery.title':'Gallery','gallery.desc':'Visually explore Astralis — interactive analysis tabs and simulation panel.',
+    'gallery.filter.all':'All','gallery.filter.analysis':'Analysis','gallery.filter.simulation':'Simulation',
+    'gallery.notice':'Tip: drop your PNG screenshots in the <code>gallery/</code> folder (e.g. <code>02-orbites.png</code>) — they will replace previews automatically.',
+    'tabs.label':'// Interface','tabs.title':'The 9 dashboard tabs','tabs.desc':'Each tab offers a dedicated view — scientific analysis or simulation engine control.',
+    'features.label':'// Physics engine','features.title':'Technical features',
+    'usage.label':'// Workflow','usage.title':'How it works','usage.desc':'From initial setup to results analysis — four straightforward steps.',
+    'usage.s1.t':'Pick a preset','usage.s1.d':'Sun-Earth-Moon, stellar binary, or fully custom system.',
+    'usage.s2.t':'Run simulation','usage.s2.d':'The engine computes trajectories and automatically exports Parquet data.',
+    'usage.s3.t':'Load results','usage.s3.d':'When the run completes, the dashboard automatically detects and loads the output Parquet file.',
+    'usage.s4.t':'Analyze','usage.s4.d':'Explore orbits, energy and stability. CSV export from Distances and Stability tabs; PNG export on charts.',
+    'install.label':'// Installation','install.title':'Download & install',
+    'install.s1.t':'Download','install.s1.d':'Get Setup_Astralis.exe directly from the GitHub Releases page.',
+    'install.s2.t':'Install','install.s2.d':'Run the installer. If SmartScreen appears: More info → Run anyway.',
+    'install.s3.t':'Launch','install.s3.d':'Double-click Astralis to open the dashboard.',
+    'install.s4.t':'Simulate','install.s4.d':'Simulation tab → pick a preset → press ▶ Run.',
+    'req.label':'// System','req.title':'Requirements',
+    'req.r1':'Windows 10 or 11 (64-bit)','req.r2':'~120 MB disk space','req.r3':'4 GB RAM recommended','req.r4':'No Python required — everything bundled in the installer',
+    'footer.desc':'Scientific project by L. Capdevila — N-body open-source gravitational simulator.',
+    'footer.copy':`© ${new Date().getFullYear()} L. Capdevila — Open Source`,
+  }
+};
+
+function t(key) { return i18n[currentLang][key] || key; }
+function badgeText(lang) { return lang==='fr' ? `${appVersion} — Disponible pour Windows` : `${appVersion} — Available for Windows`; }
+
+function updateVersionBadge() {
+  i18n.fr['hero.badge'] = badgeText('fr');
+  i18n.en['hero.badge'] = badgeText('en');
+  const el = document.querySelector('[data-i18n="hero.badge"]');
+  if (el) el.textContent = badgeText(currentLang);
+}
+
+async function fetchLatestVersion() {
+  try {
+    const res = await fetch('https://api.github.com/repos/L-Capdevila/Astralis/releases/latest');
+    if (!res.ok) return;
+    const data = await res.json();
+    const tag = (data.tag_name || '').replace(/^v/i, '');
+    if (tag) { appVersion = tag; updateVersionBadge(); }
+  } catch (_) {}
+}
+
+function tryImageSrc(img, sources, idx) {
+  if (idx >= sources.length) {
+    img.style.display = 'none';
+    const fb = img.nextElementSibling;
+    if (fb) fb.style.display = 'flex';
+    return;
+  }
+  const src = sources[idx];
+  img.onload = () => {
+    img.style.display = 'block';
+    const fb = img.nextElementSibling;
+    if (fb) fb.style.display = 'none';
+  };
+  img.onerror = () => tryImageSrc(img, sources, idx + 1);
+  img.src = src;
+}
+
+function isRealPng(src) {
+  return /\.(png|jpe?g|webp)$/i.test(src) && !/\.svg$/i.test(src);
+}
+
+function updateGalleryNotice() {
+  const notice = document.getElementById('galleryNotice');
+  if (!notice) return;
+  notice.style.display = loadedRealGalleryCount > 0 ? 'none' : 'block';
+}
+
+function checkGalleryLoaded() {
+  const seen = new Set();
+  document.querySelectorAll('#galleryGrid img, #galleryFeatured img').forEach(img => {
+    if (img.complete && img.naturalWidth > 0 && img.src && isRealPng(img.src)) {
+      try { seen.add(new URL(img.src, location.href).pathname); } catch (_) { seen.add(img.src); }
+    }
+  });
+  loadedRealGalleryCount = seen.size;
+  updateGalleryNotice();
+}
+
+function buildGalleryCard(item, featured) {
+  const loc = item[currentLang];
+  const sources = gallerySources(item);
+  const catLabel = { analysis: t('gallery.filter.analysis'), simulation: t('gallery.filter.simulation') }[item.cat] || item.cat;
+  const card = document.createElement('div');
+  card.className = featured ? 'gallery-featured' : 'gallery-card';
+  card.dataset.cat = item.cat;
+  card.innerHTML = `
+    <div class="gallery-img-container">
+      <img alt="${loc.title}" />
+      <div class="gallery-fallback" style="display:flex;">
+        <i class="fas fa-image"></i>
+        <span>${item.file}</span>
+      </div>
+    </div>
+    <div class="${featured ? 'gallery-featured-info' : 'gallery-info'}">
+      <h3>${loc.title}</h3>
+      <p>${loc.desc}</p>
+      ${featured ? '' : `<span class="gallery-tag">${catLabel}</span>`}
+    </div>`;
+  const img = card.querySelector('img');
+  tryImageSrc(img, sources, 0);
+  card.addEventListener('click', () => {
+    if (img.style.display !== 'none' && img.src) openLightbox(img.src, loc.title);
+  });
+  return card;
+}
+
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  const featured = document.getElementById('galleryFeatured');
+  grid.innerHTML = '';
+  featured.innerHTML = '';
+  featured.style.display = 'none';
+  loadedRealGalleryCount = 0;
+  const items = GALLERY_ITEMS.filter(it => galleryFilter === 'all' || it.cat === galleryFilter);
+  items.forEach((item, i) => {
+    const card = buildGalleryCard(item, false);
+    grid.appendChild(card);
+    if (i === 0) {
+      const feat = buildGalleryCard(item, true);
+      featured.appendChild(feat);
+      featured.style.display = 'block';
+    }
+  });
+  setTimeout(checkGalleryLoaded, 900);
+}
+
+function renderGalleryFilters() {
+  const el = document.getElementById('galleryFilters');
+  el.innerHTML = '';
+  [['all','gallery.filter.all'],['analysis','gallery.filter.analysis'],['simulation','gallery.filter.simulation']].forEach(([val,key]) => {
+    const btn = document.createElement('button');
+    btn.className = 'gallery-filter' + (galleryFilter === val ? ' active' : '');
+    btn.textContent = t(key);
+    btn.onclick = () => { galleryFilter = val; renderGalleryFilters(); renderGallery(); };
+    el.appendChild(btn);
+  });
+}
+
+function renderFeatures() {
+  const g = document.getElementById('featuresGrid');
+  g.innerHTML = FEATURES.map(f => {
+    const loc = f[currentLang];
+    return `<div class="feature-card"><div class="feat-icon"><i class="fas ${f.icon}"></i></div><h3>${loc.t}</h3><p>${loc.d}</p><span class="feature-tag">${f.tag}</span></div>`;
+  }).join('');
+}
+
+function renderTabs() {
+  document.getElementById('tabsGrid').innerHTML = DASHBOARD_TABS.map(tab => {
+    const loc = tab[currentLang];
+    return `<div class="tab-card"><i class="fas ${tab.icon}"></i><h3>${loc.t}</h3><p>${loc.d}</p></div>`;
+  }).join('');
+}
+
+function renderWorkflow() {
+  const steps = ['usage.s1','usage.s2','usage.s3','usage.s4'];
+  document.getElementById('workflowGrid').innerHTML = steps.map((k,i) =>
+    `<div class="workflow-step"><div class="workflow-num">${i+1}</div><h3>${t(k+'.t')}</h3><p>${t(k+'.d')}</p></div>`
+  ).join('');
+}
+
+function renderInstall() {
+  const steps = ['install.s1','install.s2','install.s3','install.s4'];
+  document.getElementById('installSteps').innerHTML = steps.map((k,i) =>
+    `<div class="step-card"><p class="step-number">${String(i+1).padStart(2,'0')}</p><h3>${t(k+'.t')}</h3><p>${t(k+'.d')}</p></div>`
+  ).join('');
+}
+
+function renderReq() {
+  document.getElementById('reqGrid').innerHTML = ['req.r1','req.r2','req.r3','req.r4'].map((k,i) => {
+    const icons = ['fa-windows','fa-hdd','fa-memory','fa-check-circle'];
+    return `<div class="req-item"><i class="fas ${icons[i]}"></i><span>${t(k)}</span></div>`;
+  }).join('');
+}
+
+function openLightbox(src, caption) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxCaption').textContent = caption;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(e) {
+  if (e.target.id === 'lightbox' || e.target.classList.contains('lb-close')) {
+    document.getElementById('lightbox').classList.remove('open');
+  }
+}
+
+function applyI18nElement(el, key) {
+  if (key === 'hero.badge') {
+    el.textContent = badgeText(currentLang);
+  } else if (HTML_I18N_KEYS.has(key) && i18n[currentLang][key]) {
+    el.innerHTML = i18n[currentLang][key];
+  } else if (i18n[currentLang][key]) {
+    el.textContent = i18n[currentLang][key];
+  }
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'fr' ? 'en' : 'fr';
+  document.getElementById('langToggle').textContent = currentLang === 'fr' ? 'EN' : 'FR';
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    applyI18nElement(el, el.getAttribute('data-i18n'));
+  });
+  renderGalleryFilters();
+  renderGallery();
+  renderFeatures();
+  renderTabs();
+  renderWorkflow();
+  renderInstall();
+  renderReq();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateVersionBadge();
+  fetchLatestVersion();
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    applyI18nElement(el, el.getAttribute('data-i18n'));
+  });
+  renderGalleryFilters();
+  renderGallery();
+  renderFeatures();
+  renderTabs();
+  renderWorkflow();
+  renderInstall();
+  renderReq();
+  const fc = document.querySelector('.footer-copy');
+  if (fc) fc.textContent = t('footer.copy');
+});
+</script>
+</body>
+</html>
